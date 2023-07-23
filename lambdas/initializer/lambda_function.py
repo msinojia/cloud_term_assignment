@@ -24,11 +24,11 @@ def lambda_handler(event, context):
             )
             print("DynamoDB entry created")
 
-            # sqs_url = 'https://sqs.us-east-1.amazonaws.com/048455746102/ImageAnalyze'
-            # response = sqs.send_message(
-            #     QueueUrl=sqs_url,
-            #     MessageBody=image_id
-            # )
+            sqs_url = 'https://sqs.us-east-1.amazonaws.com/048455746102/ImageAnalyze'
+            response = sqs.send_message(
+                QueueUrl=sqs_url,
+                MessageBody=image_id
+            )
 
         except Exception as e:
             print(e)
