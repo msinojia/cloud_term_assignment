@@ -2,6 +2,9 @@ import rekognition_utils
 import sns_utils
 import dynamodb_utils
 
+frontend_url = "http://localhost:3000"
+sns_topic_arn = "arn:aws:sns:us-east-1:048455746102:ModerateImage"
+
 
 def lambda_handler(event, context):
     for record in event['Records']:
@@ -24,8 +27,8 @@ def lambda_handler(event, context):
 
         if nsfw_response['ModerationLabels']:
             subject = "Image needs moderation"
-            message = f"Image {image_id} needs moderation. Moderation labels: {nsfw_response['ModerationLabels']}"
-            sns_topic_arn = "arn:aws:sns:us-east-1:048455746102:ModerateImage"
+            moderation_url = frontend_url + "/moderate/" + image_id
+            message = "Please click the following link to view the image and take action: " + moderation_url
             sns_utils.send_email_notification(sns_topic_arn, subject, message)
 
         status = 'PENDING_MODERATION' if nsfw_response['ModerationLabels'] else 'SAFE_AUTOMATED'
