@@ -4,10 +4,10 @@ const s3BucketName = "msinojia-images";
 
 AWS.config.update({
   region: "us-east-1",
-  accessKeyId: "ASIAQWSBQAI3OBX3KOHQ",
-  secretAccessKey: "A7UyTfBmf2iLFP5m4wobZLh6n1W0Bvj5gqEgGi8S",
+  accessKeyId: "ASIAQWSBQAI3CSRQARWB",
+  secretAccessKey: "rJnwbNlVjgoS87O7fzOOVEmLTTbgaIe30eF6NFwi",
   sessionToken:
-    "FwoGZXIvYXdzEFcaDFgDRNnawAcYqhzP0CLAAc9ApvXrNaVtE8kQUyHFBe5PcCBlfTOUHgESOz9dv0gRHxPXpTbWudWCrqEgXrNkflHpe9pkPj+2kEOByRHPJUhZ86p/uTiOWukG9IOVbdhXLLUNIle3dpl8kL+Z7GNoqSiJ6VtrbaS17diWKte5C8fOKqNBWxsV/IzbhcXjCvYDSsLPGsHJo2gCnReeG/ghTVXsyJkwsab3qpg88ZgXek2gNL2L3KftLkbmUV5kxsHqsinGkn63HQ0TZJdgrwYvASjPye2lBjIt1JjNV4xt7BSYHhYI2pL9eMTFea1Ky0tYmwzDlbBMP56xUSxaHhQexVc96p5U",
+    "FwoGZXIvYXdzEPb//////////wEaDF/zRPTSHdyiVJcbaiLAAQjYQhmiJQfmBW9nmCH7E1fIOizQw8W0UXiBG4dhtJ0Oy09/+7cY6M6dvyVJyYjMdzziQOI1Tm5WXgxX8hbOOuQW7BMXmr4TwS6YCPKvSyHCxkRNfNXZosohuX9UVJUlA5NmJkmvkTq6Tctlxco0fkH9I02Blb6be0R63vPqfLkqXKy7HNjEIpGHFEkf0cppZUiSbKwYkvmFrXmFL8uJ5r5u2jvML3ENWSyn6mps6EfdruBXgzqQ0+mNxkd9nakKAyiLxpCmBjItpfpAaObur+7lLCS0XCBaeQI1JG1ky+WENUZ+7PacvymGZNsWbOMZMTUJi2xd",
 });
 
 const s3 = new AWS.S3({ apiVersion: "2006-03-01" });
