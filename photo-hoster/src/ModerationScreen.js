@@ -12,10 +12,12 @@ function ModerationScreen() {
   const [bannerOpen, setBannerOpen] = useState(false);
   const [bannerMessage, setBannerMessage] = useState("");
 
+  const gatewayUrl = "https://f8r90kkom2.execute-api.us-east-1.amazonaws.com/prod"
+
   useEffect(() => {
     axios
       .get(
-        `https://zgyciu2nj1.execute-api.us-east-1.amazonaws.com/prod/moderate/${id}`
+        `${gatewayUrl}/prod/moderate/${id}`
       )
       .then((response) => setImageData(response.data))
       .catch((err) => console.error(err));
@@ -24,7 +26,7 @@ function ModerationScreen() {
   const handleSafeClick = () => {
     axios
       .post(
-        `https://zgyciu2nj1.execute-api.us-east-1.amazonaws.com/prod/moderate/safe`,
+        `${gatewayUrl}/prod/moderate/safe`,
         {
           image_id: id,
         }
@@ -39,7 +41,7 @@ function ModerationScreen() {
   const handleUnsafeClick = () => {
     axios
       .post(
-        `https://zgyciu2nj1.execute-api.us-east-1.amazonaws.com/prod/moderate/unsafe`,
+        `${gatewayUrl}/prod/moderate/unsafe`,
         {
           image_id: id,
         }
