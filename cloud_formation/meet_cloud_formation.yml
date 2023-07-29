@@ -139,6 +139,23 @@ Resources:
       Topics:
         - !Ref ImageModerationAlertsTopic
 
+  # DynamoDB Table
+  ImageModerationDetailsTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: ImageModerationDetails
+      AttributeDefinitions:
+        - AttributeName: image_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: image_id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      SSESpecification:
+        SSEEnabled: true
+
   # API Gateway
   PhotoHosterApi:
     Type: "AWS::ApiGateway::RestApi"
