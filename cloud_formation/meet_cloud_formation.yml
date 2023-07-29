@@ -7,6 +7,12 @@ Resources:
     DependsOn: InitializerLambdaPermission
     Properties:
       BucketName: "photo-hoster-images"
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ["*"]
+            AllowedMethods: ["GET", "PUT", "POST", "DELETE", "HEAD"]
+            AllowedOrigins: ["*"]
+            MaxAge: 3000
       NotificationConfiguration:
         LambdaConfigurations:
           - Event: "s3:ObjectCreated:*"
@@ -202,6 +208,37 @@ Resources:
       PathPart: "{image_id}"
 
   # Methods on resources inside the API Gateway
+  ModerateOptionsMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      AuthorizationType: "NONE"
+      RestApiId:
+        Ref: "PhotoHosterApi"
+      ResourceId:
+        Ref: "ModerateResource"
+      HttpMethod: "OPTIONS"
+      Integration:
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              "application/json": ""
+        PassthroughBehavior: "WHEN_NO_MATCH"
+        RequestTemplates:
+          "application/json": '{"statusCode": 200}'
+        Type: "MOCK"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          ResponseModels:
+            "application/json": "Empty"
+
   SafeOptionsMethod:
     Type: "AWS::ApiGateway::Method"
     Properties:
@@ -216,7 +253,7 @@ Resources:
           - StatusCode: 200
             ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
-              method.response.header.Access-Control-Allow-Methods: "'POST'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
               method.response.header.Access-Control-Allow-Origin: "'*'"
             ResponseTemplates:
               "application/json": ""
@@ -243,26 +280,10 @@ Resources:
       AuthorizationType: "NONE"
       HttpMethod: "POST"
       Integration:
-        Type: "AWS"
+        Type: "AWS_PROXY"
         IntegrationHttpMethod: "POST"
         Uri:
           Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ModeratorLambda.Arn}/invocations"
-        IntegrationResponses:
-          - StatusCode: 200
-            ResponseTemplates:
-              "application/json": "$input.json('$')"
-            ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-        RequestTemplates:
-          "application/json": "$input.json('$')"
-      MethodResponses:
-        - StatusCode: "200"
-          ResponseParameters:
-            method.response.header.Access-Control-Allow-Headers: true
-            method.response.header.Access-Control-Allow-Methods: true
-            method.response.header.Access-Control-Allow-Origin: true
 
   UnsafeOptionsMethod:
     Type: "AWS::ApiGateway::Method"
@@ -278,7 +299,7 @@ Resources:
           - StatusCode: 200
             ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
-              method.response.header.Access-Control-Allow-Methods: "'POST'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
               method.response.header.Access-Control-Allow-Origin: "'*'"
             ResponseTemplates:
               "application/json": ""
@@ -305,26 +326,10 @@ Resources:
       AuthorizationType: "NONE"
       HttpMethod: "POST"
       Integration:
-        Type: "AWS"
+        Type: "AWS_PROXY"
         IntegrationHttpMethod: "POST"
         Uri:
           Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ModeratorLambda.Arn}/invocations"
-        IntegrationResponses:
-          - StatusCode: 200
-            ResponseTemplates:
-              "application/json": "$input.json('$')"
-            ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-        RequestTemplates:
-          "application/json": "$input.json('$')"
-      MethodResponses:
-        - StatusCode: "200"
-          ResponseParameters:
-            method.response.header.Access-Control-Allow-Headers: true
-            method.response.header.Access-Control-Allow-Methods: true
-            method.response.header.Access-Control-Allow-Origin: true
 
   ImageOptionsMethod:
     Type: "AWS::ApiGateway::Method"
@@ -340,7 +345,7 @@ Resources:
           - StatusCode: 200
             ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
-              method.response.header.Access-Control-Allow-Methods: "'GET'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
               method.response.header.Access-Control-Allow-Origin: "'*'"
             ResponseTemplates:
               "application/json": ""
@@ -367,28 +372,28 @@ Resources:
       AuthorizationType: "NONE"
       HttpMethod: "GET"
       Integration:
-        Type: "AWS"
+        Type: "AWS_PROXY"
         IntegrationHttpMethod: "POST"
         Uri:
           Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ModeratorLambda.Arn}/invocations"
-        IntegrationResponses:
-          - StatusCode: 200
-            ResponseTemplates:
-              "application/json": "$input.json('$')"
-            ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-        RequestTemplates:
-          "application/json": "$input.json('$')"
-      MethodResponses:
-        - StatusCode: "200"
-          ResponseParameters:
-            method.response.header.Access-Control-Allow-Headers: true
-            method.response.header.Access-Control-Allow-Methods: true
-            method.response.header.Access-Control-Allow-Origin: true
-          ResponseModels:
-            "application/json": "Empty"
+      #   IntegrationResponses:
+      #     - StatusCode: 200
+      #       ResponseTemplates:
+      #         "application/json": "$input.json('$')"
+      #       ResponseParameters:
+      #         method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      #         method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+      #         method.response.header.Access-Control-Allow-Origin: "'*'"
+      #   RequestTemplates:
+      #     "application/json": "$input.json('$')"
+      # MethodResponses:
+      #   - StatusCode: "200"
+      #     ResponseParameters:
+      #       method.response.header.Access-Control-Allow-Headers: true
+      #       method.response.header.Access-Control-Allow-Methods: true
+      #       method.response.header.Access-Control-Allow-Origin: true
+      #     ResponseModels:
+      #       "application/json": "Empty"
 
   # Deployment and Stage for API Gateway
   ApiGatewayDeployment:
