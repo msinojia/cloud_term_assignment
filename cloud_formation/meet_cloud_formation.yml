@@ -1,0 +1,436 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "CloudFormation Template for the deployment of Cloud Term Project"
+Resources:
+  # S3 Bucket
+  ImagesBucket:
+    Type: "AWS::S3::Bucket"
+    DependsOn: InitializerLambdaPermission
+    Properties:
+      BucketName: "photo-hoster-images"
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: "s3:ObjectCreated:*"
+            Function:
+              Fn::GetAtt:
+                - InitializerLambda
+                - Arn
+
+  # Lambda functions
+  InitializerLambda:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      FunctionName: "photo_hoster_initializer"
+      Runtime: "python3.8"
+      Role: "arn:aws:iam::048455746102:role/LabRole"
+      Handler: "lambda_function.lambda_handler"
+      Code:
+        S3Bucket: "photo-hoster-code"
+        S3Key: "initializer_function.zip"
+      Timeout: 20
+
+  AnalyzerLambda:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      FunctionName: "photo_hoster_analyzer"
+      Runtime: "python3.8"
+      Role: "arn:aws:iam::048455746102:role/LabRole"
+      Handler: "lambda_function.lambda_handler"
+      Code:
+        S3Bucket: "photo-hoster-code"
+        S3Key: "analyzer_function.zip"
+      Timeout: 20
+
+  ModeratorLambda:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      FunctionName: "photo_hoster_moderator"
+      Runtime: "python3.8"
+      Role: "arn:aws:iam::048455746102:role/LabRole"
+      Handler: "lambda_function.lambda_handler"
+      Code:
+        S3Bucket: "photo-hoster-code"
+        S3Key: "moderator_function.zip"
+      Timeout: 20
+
+  # SQS Queue
+  ImageAnalysisQueue:
+    Type: "AWS::SQS::Queue"
+    Properties:
+      QueueName: "ImageAnalysisQueue"
+      KmsMasterKeyId: "alias/aws/sqs"
+      KmsDataKeyReusePeriodSeconds: 300
+
+  SQSLambdaTrigger:
+    Type: "AWS::Lambda::EventSourceMapping"
+    Properties:
+      EventSourceArn:
+        Fn::GetAtt:
+          - ImageAnalysisQueue
+          - Arn
+      FunctionName:
+        Fn::GetAtt:
+          - AnalyzerLambda
+          - Arn
+      BatchSize: 10
+
+  SQSAccessPolicy:
+    Type: "AWS::SQS::QueuePolicy"
+    Properties:
+      Queues:
+        - Ref: ImageAnalysisQueue
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: "arn:aws:iam::048455746102:root"
+            Action: "SQS:*"
+            Resource:
+              Fn::GetAtt:
+                - ImageAnalysisQueue
+                - Arn
+
+  # Permission for initializer lambda to be invoked by S3
+  InitializerLambdaPermission:
+    Type: "AWS::Lambda::Permission"
+    DependsOn: InitializerLambda
+    Properties:
+      FunctionName:
+        Fn::GetAtt:
+          - InitializerLambda
+          - Arn
+      Action: "lambda:InvokeFunction"
+      Principal: "s3.amazonaws.com"
+      SourceArn: !Sub "arn:aws:s3:::photo-hoster-images"
+
+  # SNS Topic
+  ImageModerationAlertsTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      TopicName: ImageModerationAlerts
+      DisplayName: Image Moderation Alerts
+      Subscription:
+        - Endpoint: meetsinojia7@gmail.com
+          Protocol: email
+
+  ImageModerationAlertsTopicPolicy:
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      PolicyDocument:
+        Id: "__default_policy_ID"
+        Version: "2008-10-17"
+        Statement:
+          - Sid: "__default_statement_ID"
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - "SNS:GetTopicAttributes"
+              - "SNS:SetTopicAttributes"
+              - "SNS:AddPermission"
+              - "SNS:RemovePermission"
+              - "SNS:DeleteTopic"
+              - "SNS:Subscribe"
+              - "SNS:ListSubscriptionsByTopic"
+              - "SNS:Publish"
+            Resource: !Ref ImageModerationAlertsTopic
+            Condition:
+              StringEquals:
+                "AWS:SourceOwner": !Ref "AWS::AccountId"
+      Topics:
+        - !Ref ImageModerationAlertsTopic
+
+  # API Gateway
+  PhotoHosterApi:
+    Type: "AWS::ApiGateway::RestApi"
+    Properties:
+      Name: "PhotoHosterApi"
+
+  # Resources inside the API Gateway
+  ModerateResource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      RestApiId:
+        Ref: "PhotoHosterApi"
+      ParentId:
+        Fn::GetAtt:
+          - "PhotoHosterApi"
+          - "RootResourceId"
+      PathPart: "moderate"
+
+  SafeResource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      RestApiId:
+        Ref: "PhotoHosterApi"
+      ParentId:
+        Ref: "ModerateResource"
+      PathPart: "safe"
+
+  UnsafeResource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      RestApiId:
+        Ref: "PhotoHosterApi"
+      ParentId:
+        Ref: "ModerateResource"
+      PathPart: "unsafe"
+
+  ImageIdResource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      RestApiId:
+        Ref: "PhotoHosterApi"
+      ParentId:
+        Ref: "ModerateResource"
+      PathPart: "{image_id}"
+
+  # Methods on resources inside the API Gateway
+  SafeOptionsMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      AuthorizationType: "NONE"
+      RestApiId:
+        Ref: "PhotoHosterApi"
+      ResourceId:
+        Ref: "SafeResource"
+      HttpMethod: "OPTIONS"
+      Integration:
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+              method.response.header.Access-Control-Allow-Methods: "'POST'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              "application/json": ""
+        PassthroughBehavior: "WHEN_NO_MATCH"
+        RequestTemplates:
+          "application/json": '{"statusCode": 200}'
+        Type: "MOCK"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          ResponseModels:
+            "application/json": "Empty"
+
+  SafePostMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId:
+        Ref: "PhotoHosterApi"
+      ResourceId:
+        Ref: "SafeResource"
+      AuthorizationType: "NONE"
+      HttpMethod: "POST"
+      Integration:
+        Type: "AWS"
+        IntegrationHttpMethod: "POST"
+        Uri:
+          Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ModeratorLambda.Arn}/invocations"
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates:
+              "application/json": "$input.json('$')"
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        RequestTemplates:
+          "application/json": "$input.json('$')"
+      MethodResponses:
+        - StatusCode: "200"
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  UnsafeOptionsMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      AuthorizationType: "NONE"
+      RestApiId:
+        Ref: "PhotoHosterApi"
+      ResourceId:
+        Ref: "UnsafeResource"
+      HttpMethod: "OPTIONS"
+      Integration:
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+              method.response.header.Access-Control-Allow-Methods: "'POST'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              "application/json": ""
+        PassthroughBehavior: "WHEN_NO_MATCH"
+        RequestTemplates:
+          "application/json": '{"statusCode": 200}'
+        Type: "MOCK"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          ResponseModels:
+            "application/json": "Empty"
+
+  UnsafePostMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId:
+        Ref: "PhotoHosterApi"
+      ResourceId:
+        Ref: "UnsafeResource"
+      AuthorizationType: "NONE"
+      HttpMethod: "POST"
+      Integration:
+        Type: "AWS"
+        IntegrationHttpMethod: "POST"
+        Uri:
+          Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ModeratorLambda.Arn}/invocations"
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates:
+              "application/json": "$input.json('$')"
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        RequestTemplates:
+          "application/json": "$input.json('$')"
+      MethodResponses:
+        - StatusCode: "200"
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  ImageOptionsMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      AuthorizationType: "NONE"
+      RestApiId:
+        Ref: "PhotoHosterApi"
+      ResourceId:
+        Ref: "ImageIdResource"
+      HttpMethod: "OPTIONS"
+      Integration:
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+              method.response.header.Access-Control-Allow-Methods: "'GET'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              "application/json": ""
+        PassthroughBehavior: "WHEN_NO_MATCH"
+        RequestTemplates:
+          "application/json": '{"statusCode": 200}'
+        Type: "MOCK"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          ResponseModels:
+            "application/json": "Empty"
+
+  ImageGetMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId:
+        Ref: "PhotoHosterApi"
+      ResourceId:
+        Ref: "ImageIdResource"
+      AuthorizationType: "NONE"
+      HttpMethod: "GET"
+      Integration:
+        Type: "AWS"
+        IntegrationHttpMethod: "POST"
+        Uri:
+          Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ModeratorLambda.Arn}/invocations"
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates:
+              "application/json": "$input.json('$')"
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        RequestTemplates:
+          "application/json": "$input.json('$')"
+      MethodResponses:
+        - StatusCode: "200"
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          ResponseModels:
+            "application/json": "Empty"
+
+  # Deployment and Stage for API Gateway
+  ApiGatewayDeployment:
+    Type: "AWS::ApiGateway::Deployment"
+    DependsOn:
+      - "SafeOptionsMethod"
+      - "SafePostMethod"
+      - "UnsafeOptionsMethod"
+      - "UnsafePostMethod"
+      - "ImageOptionsMethod"
+      - "ImageGetMethod"
+    Properties:
+      RestApiId:
+        Ref: "PhotoHosterApi"
+
+  ApiGatewayStage:
+    Type: "AWS::ApiGateway::Stage"
+    DependsOn: "ApiGatewayDeployment"
+    Properties:
+      RestApiId:
+        Ref: "PhotoHosterApi"
+      DeploymentId:
+        Ref: "ApiGatewayDeployment"
+      StageName: "prod"
+      Description: "Production Stage"
+
+  # Permissions for the lambda functions triggered through API Gateway
+  ModeratorLambdaPermissionGetImage:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName:
+        Fn::GetAtt:
+          - "ModeratorLambda"
+          - "Arn"
+      Action: "lambda:InvokeFunction"
+      Principal: "apigateway.amazonaws.com"
+      SourceArn:
+        Fn::Sub: "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PhotoHosterApi}/*/GET/moderate/*"
+
+  ModeratorLambdaPermissionSafe:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName:
+        Fn::GetAtt:
+          - "ModeratorLambda"
+          - "Arn"
+      Action: "lambda:InvokeFunction"
+      Principal: "apigateway.amazonaws.com"
+      SourceArn:
+        Fn::Sub: "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PhotoHosterApi}/*/POST/moderate/safe"
+
+  ModeratorLambdaPermissionUnsafe:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName:
+        Fn::GetAtt:
+          - "ModeratorLambda"
+          - "Arn"
+      Action: "lambda:InvokeFunction"
+      Principal: "apigateway.amazonaws.com"
+      SourceArn:
+        Fn::Sub: "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PhotoHosterApi}/*/POST/moderate/unsafe"
