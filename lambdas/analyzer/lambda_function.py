@@ -3,7 +3,7 @@ import sns_utils
 import dynamodb_utils
 
 frontend_url = "http://localhost:3000"
-sns_topic_arn = "arn:aws:sns:us-east-1:048455746102:ModerateImage"
+sns_topic_name = "ModerateImage"
 
 
 def lambda_handler(event, context):
@@ -29,7 +29,7 @@ def lambda_handler(event, context):
             subject = "Image needs moderation"
             moderation_url = frontend_url + "/moderate/" + image_id
             message = "Please click the following link to view the image and take action: " + moderation_url
-            sns_utils.send_email_notification(sns_topic_arn, subject, message)
+            sns_utils.send_email_notification(sns_topic_name, subject, message)
 
         status = 'PENDING_MODERATION' if nsfw_response['ModerationLabels'] else 'SAFE_AUTOMATED'
         dynamodb_utils.update_dynamodb_entry(
