@@ -1,6 +1,9 @@
 import boto3
 import uuid
 
+dynamodb_table_name = "ImageModerationDetails"
+sqs_queue_name = "ImageAnalysisQueue"
+
 
 def lambda_handler(event, context):
     dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
@@ -12,7 +15,7 @@ def lambda_handler(event, context):
         s3_url = f"https://{bucket}.s3.amazonaws.com/{key}"
         image_id = str(uuid.uuid4())
 
-        table = dynamodb.Table('ModerationLabels')
+        table = dynamodb.Table(dynamodb_table_name)
         try:
             table.put_item(
                 Item={
@@ -24,8 +27,7 @@ def lambda_handler(event, context):
             )
             print("DynamoDB entry created")
 
-            queue_name = 'ImageAnalyze'
-            response = sqs.get_queue_url(QueueName=queue_name)
+            response = sqs.get_queue_url(QueueName=sqs_queue_name)
             sqs_url = response['QueueUrl']
             sqs.send_message(
                 QueueUrl=sqs_url,

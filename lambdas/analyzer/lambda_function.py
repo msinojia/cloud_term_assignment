@@ -3,7 +3,7 @@ import sns_utils
 import dynamodb_utils
 
 frontend_url = "http://localhost:3000"
-sns_topic_name = "ModerateImage"
+sns_topic_name = "ImageModerationAlerts"
 
 
 def lambda_handler(event, context):

@@ -3,7 +3,7 @@ from http import HTTPStatus
 import boto3
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table('ModerationLabels')
+table = dynamodb.Table('ImageModerationDetails')
 
 
 def handle(event):

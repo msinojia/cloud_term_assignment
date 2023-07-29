@@ -3,8 +3,8 @@ from http import HTTPStatus
 import boto3
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table('ModerationLabels')
-s3_bucket_name = 'msinojia-images'
+table = dynamodb.Table('ImageModerationDetails')
+s3_bucket_name = 'photo-hoster-images'
 s3_client = boto3.client('s3')
 
 
