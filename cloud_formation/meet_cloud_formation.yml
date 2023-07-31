@@ -376,24 +376,6 @@ Resources:
         IntegrationHttpMethod: "POST"
         Uri:
           Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ModeratorLambda.Arn}/invocations"
-      #   IntegrationResponses:
-      #     - StatusCode: 200
-      #       ResponseTemplates:
-      #         "application/json": "$input.json('$')"
-      #       ResponseParameters:
-      #         method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-      #         method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
-      #         method.response.header.Access-Control-Allow-Origin: "'*'"
-      #   RequestTemplates:
-      #     "application/json": "$input.json('$')"
-      # MethodResponses:
-      #   - StatusCode: "200"
-      #     ResponseParameters:
-      #       method.response.header.Access-Control-Allow-Headers: true
-      #       method.response.header.Access-Control-Allow-Methods: true
-      #       method.response.header.Access-Control-Allow-Origin: true
-      #     ResponseModels:
-      #       "application/json": "Empty"
 
   # Deployment and Stage for API Gateway
   ApiGatewayDeployment:
@@ -456,3 +438,60 @@ Resources:
       Principal: "apigateway.amazonaws.com"
       SourceArn:
         Fn::Sub: "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PhotoHosterApi}/*/POST/moderate/unsafe"
+
+  # Frontend
+  FrontendSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "Security group for the Frontend EC2 instance"
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: 80
+          ToPort: 80
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: 22
+          ToPort: 22
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: "0.0.0.0/0"
+
+  LabInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - "LabRole"
+
+  FrontendEC2:
+    Type: "AWS::EC2::Instance"
+    DependsOn: PhotoHosterApi
+    Properties:
+      InstanceType: "t2.small"
+      ImageId: "ami-053b0d53c279acc90"
+      KeyName: "cloud_term"
+      IamInstanceProfile: !Ref LabInstanceProfile
+      SecurityGroupIds:
+        - Ref: "FrontendSecurityGroup"
+      Tags:
+        - Key: Name
+          Value: PhotoHosterFrontend
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt update
+          sudo apt install git -y
+          curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+          sudo apt install -y nodejs
+          git clone https://gitlab-ci-token:glpat-bK91E5dzPzBd1FQz__54@git.cs.dal.ca/sinojia/cloud_term_assignment.git  /home/ubuntu/app/
+          sudo chown -R ubuntu:ubuntu /home/ubuntu/app
+          echo "API_GATEWAY_KEY=${PhotoHosterApi}" >> /home/ubuntu/app/.env.local
+          #cd /home/ubuntu/app/photo-hoster && npm i && npm start
+          sudo apt install awscli -y
+          PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+          aws ssm put-parameter --name "FrontendIP" --value "$PUBLIC_IP" --type "String" --overwrite --region us-east-1

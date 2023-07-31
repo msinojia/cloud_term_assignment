@@ -1,8 +1,10 @@
+import boto3
+
 import rekognition_utils
 import sns_utils
 import dynamodb_utils
 
-frontend_url = "http://localhost:3000"
+# frontend_url = "http://localhost:3000"
 sns_topic_name = "ImageModerationAlerts"
 
 
@@ -27,7 +29,7 @@ def lambda_handler(event, context):
 
         if nsfw_response['ModerationLabels']:
             subject = "Image needs moderation"
-            moderation_url = frontend_url + "/moderate/" + image_id
+            moderation_url = get_frontend_url() + "/moderate/" + image_id
             message = "Please click the following link to view the image and take action: " + moderation_url
             sns_utils.send_email_notification(sns_topic_name, subject, message)
 
@@ -36,3 +38,9 @@ def lambda_handler(event, context):
             image_id, nsfw_response['ModerationLabels'], status)
 
     return 'Analysis completed.'
+
+
+def get_frontend_url():
+    ssm = boto3.client('ssm', region_name='us-east-1')
+    parameter = ssm.get_parameter(Name='FrontendURL', WithDecryption=True)
+    return parameter['Parameter']['Value']
