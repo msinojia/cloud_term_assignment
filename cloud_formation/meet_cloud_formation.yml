@@ -472,7 +472,7 @@ Resources:
     Type: "AWS::EC2::Instance"
     DependsOn: PhotoHosterApi
     Properties:
-      InstanceType: "t2.small"
+      InstanceType: "t2.medium"
       ImageId: "ami-053b0d53c279acc90"
       KeyName: "cloud_term"
       IamInstanceProfile: !Ref LabInstanceProfile
@@ -488,9 +488,7 @@ Resources:
           sudo apt install git -y
           curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
           sudo apt install -y nodejs
-          git clone https://gitlab-ci-token:glpat-bK91E5dzPzBd1FQz__54@git.cs.dal.ca/sinojia/cloud_term_assignment.git  /home/ubuntu/app/
-          sudo chown -R ubuntu:ubuntu /home/ubuntu/app
-          git checkout prod
+          git clone -b prod https://gitlab-ci-token:glpat-bK91E5dzPzBd1FQz__54@git.cs.dal.ca/sinojia/cloud_term_assignment.git  /home/ubuntu/app/
           echo "REACT_APP_API_GATEWAY_KEY=${PhotoHosterApi}" >> /home/ubuntu/app/photo-hoster/.env.local
           sudo apt install awscli -y
           PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
