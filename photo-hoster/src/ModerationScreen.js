@@ -12,7 +12,7 @@ function ModerationScreen() {
   const [bannerOpen, setBannerOpen] = useState(false);
   const [bannerMessage, setBannerMessage] = useState("");
 
-  const API_GATEWAY_KEY = process.env.API_GATEWAY_KEY;
+  const API_GATEWAY_KEY = process.env.REACT_APP_API_GATEWAY_KEY;
   const gatewayUrl = `https://${API_GATEWAY_KEY}.execute-api.us-east-1.amazonaws.com`
 
   useEffect(() => {
