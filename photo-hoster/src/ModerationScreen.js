@@ -72,7 +72,8 @@ function ModerationScreen() {
         justifyContent: "center",
         alignItems: "center",
         minHeight: "100vh",
-        backgroundColor: "#F0F8FF",
+        // backgroundColor: "#F0F8FF",
+        animation: 'colorchange 5s infinite',
       }}
     >
       <Card sx={{ border: "1px solid #3f51b5", minWidth: 275 }}>
@@ -140,7 +141,7 @@ function ModerationScreen() {
                     <TableHead>
                       <TableRow
                         sx={{
-                          backgroundColor: "#f5f5f5", // Change the background color of the header row
+                          backgroundColor: "#e3f2fd", // Change the background color of the header row
                         }}
                       >
                         <TableCell
@@ -182,7 +183,7 @@ function ModerationScreen() {
                             key={index}
                             sx={{
                               backgroundColor:
-                                index % 2 !== 0 ? "#f2f2f2" : "white", // Alternate the background color of rows
+                                index % 2 !== 0 ? "#e3f2fd" : "white", // Alternate the background color of rows
                             }}
                           >
                             <TableCell

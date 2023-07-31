@@ -9,7 +9,7 @@ function landing() {
 
 const Header = () => {
   return (
-    <AppBar position="static" sx={{ marginBottom: "1em" }}>
+    <AppBar position="static">
       <Toolbar sx={{ justifyContent: "center" }}>
         {/* Branding */}
         <button

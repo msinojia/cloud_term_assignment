@@ -44,69 +44,70 @@ const UploadForm = () => {
   };
 
   return (
-    <Card
-      variant="outlined"
-      sx={{
-        padding: 2,
-        marginTop: 2,
-        maxWidth: 400,
-        margin: "auto",
-        border: "1px solid #3f51b5",
-        backgroundColor: "#F0F8FF",
-      }}
-    >
-      <CardContent>
-        <Box
-          component="form"
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            "& > :not(style)": { m: 1 },
-          }}
-        >
-          {!selectedFile && (
-            <>
-              <input
-                accept="image/*"
-                style={{ display: "none" }}
-                id="raised-button-file"
-                multiple
-                type="file"
-                ref={fileInputRef}
-                onChange={onFileChange}
-              />
-              <label htmlFor="raised-button-file">
-                <Button variant="contained" color="primary" component="span">
-                  Choose File
-                </Button>
-              </label>
-            </>
-          )}
-          {selectedFile && (
-            <>
-              <Button variant="contained" color="primary" onClick={onSubmit}>
-                Upload
-              </Button>
-              <Box sx={{ height: 300, width: "100%", marginTop: 2 }}>
-                <img
-                  src={previewSrc}
-                  alt="Preview"
-                  style={{ maxWidth: "100%", maxHeight: "100%" }}
+    <div style={{ marginTop: "20px" }}>
+      <Card
+        variant="outlined"
+        sx={{
+          padding: 2,
+          maxWidth: 400,
+          margin: "auto",
+          border: "1px solid #3f51b5",
+          backgroundColor: "#F0F8FF",
+        }}
+      >
+        <CardContent>
+          <Box
+            component="form"
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              "& > :not(style)": { m: 1 },
+            }}
+          >
+            {!selectedFile && (
+              <>
+                <input
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  id="raised-button-file"
+                  multiple
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={onFileChange}
                 />
-              </Box>
-            </>
-          )}
-        </Box>
-      </CardContent>
-      {uploadSuccess && (
-        <Banner
-          open={uploadSuccess}
-          handleClose={handleClose}
-          message={"Photo uploaded successfully!"}
-        />
-      )}
-    </Card>
+                <label htmlFor="raised-button-file">
+                  <Button variant="contained" color="primary" component="span">
+                    Choose File
+                  </Button>
+                </label>
+              </>
+            )}
+            {selectedFile && (
+              <>
+                <Button variant="contained" color="primary" onClick={onSubmit}>
+                  Upload
+                </Button>
+                <Box sx={{ height: 300, width: "100%", marginTop: 2 }}>
+                  <img
+                    src={previewSrc}
+                    alt="Preview"
+                    style={{ maxWidth: "100%", maxHeight: "100%" }}
+                  />
+                </Box>
+              </>
+            )}
+          </Box>
+        </CardContent>
+        {uploadSuccess && (
+          <Banner
+            open={uploadSuccess}
+            handleClose={handleClose}
+            message={"Photo uploaded successfully!"}
+          />
+        )}
+      </Card>
+    </div>
   );
 };
 
