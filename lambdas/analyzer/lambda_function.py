@@ -43,4 +43,4 @@ def lambda_handler(event, context):
 def get_frontend_url():
     ssm = boto3.client('ssm', region_name='us-east-1')
     parameter = ssm.get_parameter(Name='FrontendIP', WithDecryption=True)
-    return "https://" + parameter['Parameter']['Value'] + ":3000"
+    return "http://" + parameter['Parameter']['Value'] + ":3000"

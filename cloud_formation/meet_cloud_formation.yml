@@ -490,8 +490,8 @@ Resources:
           sudo apt install -y nodejs
           git clone https://gitlab-ci-token:glpat-bK91E5dzPzBd1FQz__54@git.cs.dal.ca/sinojia/cloud_term_assignment.git  /home/ubuntu/app/
           sudo chown -R ubuntu:ubuntu /home/ubuntu/app
-          echo "API_GATEWAY_KEY=${PhotoHosterApi}" >> /home/ubuntu/app/.env.local
-          #cd /home/ubuntu/app/photo-hoster && npm i && npm start
+          echo "API_GATEWAY_KEY=${PhotoHosterApi}" >> /home/ubuntu/app/photo-hoster/.env.local
           sudo apt install awscli -y
           PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
           aws ssm put-parameter --name "FrontendIP" --value "$PUBLIC_IP" --type "String" --overwrite --region us-east-1
+          #cd /home/ubuntu/app/photo-hoster && git checkout prod && npm i && npm start
