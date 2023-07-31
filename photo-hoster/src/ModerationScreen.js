@@ -12,7 +12,8 @@ function ModerationScreen() {
   const [bannerOpen, setBannerOpen] = useState(false);
   const [bannerMessage, setBannerMessage] = useState("");
 
-  const gatewayUrl = "https://f8r90kkom2.execute-api.us-east-1.amazonaws.com"
+  const API_GATEWAY_KEY = process.env.API_GATEWAY_KEY;
+  const gatewayUrl = `https://${API_GATEWAY_KEY}.execute-api.us-east-1.amazonaws.com`
 
   useEffect(() => {
     axios
