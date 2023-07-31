@@ -1,17 +1,15 @@
 import React from "react";
-import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 
 import UploadForm from "./UploadForm";
 import ModerationScreen from "./ModerationScreen";
+import Header from "./Header";
 
 function App() {
   return (
-    <Box sx={{ m: 4 }}>
-      <Typography variant="h3" component="h1" align="center" gutterBottom>
-        Photo Hoster
-      </Typography>
+    <Box>
+      <Header />
       <BrowserRouter>
         <Routes>
           <Route exact path="/" element={<Navigate replace to="/upload" />} />
