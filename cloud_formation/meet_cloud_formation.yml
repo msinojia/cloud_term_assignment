@@ -57,6 +57,18 @@ Resources:
         S3Bucket: "photo-hoster-code"
         S3Key: "moderator_function.zip"
       Timeout: 20
+  
+  ViewerLambda:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      FunctionName: "photo_hoster_viewer"
+      Runtime: "python3.8"
+      Role: "arn:aws:iam::048455746102:role/LabRole"
+      Handler: "lambda_function.lambda_handler"
+      Code:
+        S3Bucket: "photo-hoster-code"
+        S3Key: "viewer_function.zip"
+      Timeout: 20
 
   # SQS Queue
   ImageAnalysisQueue:
@@ -206,6 +218,17 @@ Resources:
       ParentId:
         Ref: "ModerateResource"
       PathPart: "{image_id}"
+
+  ViewResource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      RestApiId:
+        Ref: "PhotoHosterApi"
+      ParentId:
+        Fn::GetAtt:
+          - "PhotoHosterApi"
+          - "RootResourceId"
+      PathPart: "view"
 
   # Methods on resources inside the API Gateway
   ModerateOptionsMethod:
@@ -377,6 +400,52 @@ Resources:
         Uri:
           Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ModeratorLambda.Arn}/invocations"
 
+  ViewOptionsMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      AuthorizationType: "NONE"
+      RestApiId:
+        Ref: "PhotoHosterApi"
+      ResourceId:
+        Ref: "ViewResource"
+      HttpMethod: "OPTIONS"
+      Integration:
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              "application/json": ""
+        PassthroughBehavior: "WHEN_NO_MATCH"
+        RequestTemplates:
+          "application/json": '{"statusCode": 200}'
+        Type: "MOCK"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          ResponseModels:
+            "application/json": "Empty"
+
+  ViewGetMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId:
+        Ref: "PhotoHosterApi"
+      ResourceId:
+        Ref: "ViewResource"
+      AuthorizationType: "NONE"
+      HttpMethod: "GET"
+      Integration:
+        Type: "AWS_PROXY"
+        IntegrationHttpMethod: "POST"
+        Uri:
+          Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ViewerLambda.Arn}/invocations"
+
   # Deployment and Stage for API Gateway
   ApiGatewayDeployment:
     Type: "AWS::ApiGateway::Deployment"
@@ -387,6 +456,7 @@ Resources:
       - "UnsafePostMethod"
       - "ImageOptionsMethod"
       - "ImageGetMethod"
+      - "ViewGetMethod"
     Properties:
       RestApiId:
         Ref: "PhotoHosterApi"
@@ -438,6 +508,18 @@ Resources:
       Principal: "apigateway.amazonaws.com"
       SourceArn:
         Fn::Sub: "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PhotoHosterApi}/*/POST/moderate/unsafe"
+
+  ViewerLambdaPermissionUnsafe:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName:
+        Fn::GetAtt:
+          - "ViewerLambda"
+          - "Arn"
+      Action: "lambda:InvokeFunction"
+      Principal: "apigateway.amazonaws.com"
+      SourceArn:
+        Fn::Sub: "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PhotoHosterApi}/*/GET/view"
 
   # Frontend
   FrontendSecurityGroup:
