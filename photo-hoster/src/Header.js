@@ -1,9 +1,16 @@
 import React from "react";
-import { AppBar, Toolbar, Typography, Box } from "@mui/material";
+import { AppBar, Toolbar, Typography, Box, IconButton } from "@mui/material";
+import UploadIcon from "@mui/icons-material/FileUpload";
 
 function landing() {
   if (window.location.pathname !== "/") {
     window.location.href = "/";
+  }
+}
+
+function goToUpload() {
+  if (window.location.pathname !== "/upload") {
+    window.location.href = "/upload";
   }
 }
 
@@ -51,6 +58,14 @@ const Header = () => {
             </Typography>
           </Box>
         </button>
+        {/* Upload button */}
+        <IconButton
+          sx={{ justifyContent: "center" }}
+          color="inherit"
+          onClick={goToUpload}
+        >
+          <UploadIcon />
+        </IconButton>
       </Toolbar>
     </AppBar>
   );

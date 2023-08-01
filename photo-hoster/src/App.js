@@ -5,6 +5,7 @@ import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import UploadForm from "./UploadForm";
 import ModerationScreen from "./ModerationScreen";
 import Header from "./Header";
+import Gallery from "./Gallery";
 
 function App() {
   return (
@@ -12,7 +13,8 @@ function App() {
       <Header />
       <BrowserRouter>
         <Routes>
-          <Route exact path="/" element={<Navigate replace to="/upload" />} />
+          <Route exact path="/" element={<Navigate replace to="/gallery" />} />
+          <Route path="/gallery" element={<Gallery />} />
           <Route path="/upload" element={<UploadForm />} />
           <Route path="/moderate/:id" element={<ModerationScreen />} />
         </Routes>
